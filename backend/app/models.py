@@ -1,10 +1,10 @@
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Text, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID as PGUUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, Text, UniqueConstraint, text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PGUUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base
 
@@ -42,4 +42,21 @@ class Submission(Base):
     programming_language: Mapped[Optional[str]] = mapped_column(Text)
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     handle: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+    __table_args__ = (UniqueConstraint("slug"),)
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    slug: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    icon: Mapped[str] = mapped_column(Text, nullable=False, default="🏆")
+    reward_xp: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    starts_on: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    ends_on: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    definition: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))

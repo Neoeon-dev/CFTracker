@@ -32,6 +32,8 @@ create table if not exists public.submissions (
 
 create index if not exists submissions_user_time_idx
   on public.submissions(user_id, submitted_at desc);
+create index if not exists submissions_user_id_desc_idx
+  on public.submissions(user_id, id desc);
 create index if not exists submissions_user_verdict_idx
   on public.submissions(user_id, verdict);
 create index if not exists submissions_problem_idx
@@ -58,3 +60,25 @@ from public.submissions s
 join public.problems p on p.id = s.problem_id
 where s.verdict = 'OK'
 order by s.user_id, s.contest_id, s.problem_index, s.submitted_at asc;
+
+create table if not exists public.challenges (
+  id uuid primary key default gen_random_uuid(),
+  slug text unique not null,
+  title text not null,
+  description text not null,
+  icon text not null default '🏆',
+  reward_xp integer not null default 100 check (reward_xp >= 0 and reward_xp <= 5000),
+  starts_on date,
+  ends_on date,
+  definition jsonb not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  check (ends_on is null or starts_on is null or ends_on >= starts_on)
+);
+
+create index if not exists challenges_active_dates_idx
+  on public.challenges(active, starts_on, ends_on);
+
+alter table public.challenges enable row level security;
+
+-- Backend-only application: challenges are accessed by FastAPI using PostgreSQL.
